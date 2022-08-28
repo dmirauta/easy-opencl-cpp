@@ -91,54 +91,62 @@ template<typename T>
 class SharedArray
 {
     public:
-        SharedArray(int n);
+        int items;
+        int buffsize;
+        T* cpu_buff;
+        cl::Buffer gpu_buff;
 
-        void to_gpu();
-        void from_gpu();
+        std::string _name;
 
-        int size;
-        T* cpu_arr;
-        cl::Buffer gpu_arr;
+        SharedArray(int n, cl::Context &context, std::string name="arr")
+        {
+            _name = name;
+            std::cout << name << " created\n";
 
+            items = n;
+            buffsize = sizeof(T)*items;
+            cpu_buff = new T[items];
+            gpu_buff = cl::Buffer(context, CL_MEM_READ_WRITE, buffsize);
+        };
+
+        ~SharedArray()
+        {
+            std::cout << _name << " destroyed\n";
+
+            delete [] cpu_buff;
+        };
+
+        void to_gpu(cl::CommandQueue &queue)
+        {
+            queue.enqueueWriteBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
+        };
+
+        void from_gpu(cl::CommandQueue &queue)
+        {
+            queue.enqueueReadBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
+        };
 //    private:
-}
+};
 
-SharedArray::SharedArray(int n, cl::Context &context)
-{
-    size = n;
-    gpu_arr(context, CL_MEM_READ_WRITE, sizeof(T)*n)
-}
-
-void SharedArray::to_gpu()
-{
-
-}
-
-void SharedArray::from_gpu()
-{
-
-}
-
+template<typename T>
 void run_vec_kernel(cl::Context &context,
                     cl::CommandQueue &queue,
                     cl::Kernel &vec_kernel,
-                    int *A, int *B, int *C, int n)
+                    std::vector<std::reference_wrapper<SharedArray<T>>> params)
 {
 
-    cl::Buffer buffer_A(context, CL_MEM_READ_WRITE, sizeof(int)*n);
-    cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, sizeof(int)*n);
-    cl::Buffer buffer_C(context, CL_MEM_READ_WRITE, sizeof(int)*n);
-
-    queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, sizeof(int)*n, A);
-    queue.enqueueWriteBuffer(buffer_B, CL_TRUE, 0, sizeof(int)*n, B);
-
-    vec_kernel.setArg(0, buffer_A);
-    vec_kernel.setArg(1, buffer_B);
-    vec_kernel.setArg(2, buffer_C);
+    for(int i=0; i<params.size(); i++)
+    {
+        params[i].get().to_gpu(queue);
+        vec_kernel.setArg(i, params[i].get().gpu_buff);
+    }
 
     queue.enqueueNDRangeKernel(vec_kernel, cl::NullRange, cl::NDRange(NUM_GLOBAL_WITEMS), cl::NDRange(32));
 
-    queue.enqueueReadBuffer(buffer_C, CL_TRUE, 0, sizeof(int)*n, C);
+    for(auto &par : params)
+    {
+        par.get().from_gpu(queue);
+    }
 
     queue.finish(); // blocking
 
@@ -146,6 +154,8 @@ void run_vec_kernel(cl::Context &context,
 
 
 int main(int argc, char* argv[]) {
+
+    //std::cout << __LINE__ << "\n";
 
     bool verbose;
     if (argc == 1 || std::strcmp(argv[1], "0") == 0)
@@ -165,24 +175,31 @@ int main(int argc, char* argv[]) {
     std::map<std::string, cl::Kernel> kernels = setup_cl_prog(context, device, source_files, kernel_names);
 
     // construct vectors
-    int A[n], B[n], C[n];
+    SharedArray<int> A = SharedArray<int>(n, context, "A");
+    SharedArray<int> B = SharedArray<int>(n, context, "B");
+    SharedArray<int> C = SharedArray<int>(n, context, "C");
+
     for (int i=0; i<n; i++) {
-        A[i] = i;
-        B[i] = n - i - 1;
+        A.cpu_buff[i] = i;
+        B.cpu_buff[i] = n - i - 1;
     }
 
-    std::cout << "\n";
-    run_vec_kernel(context, queue, kernels["vector_add"], A, B, C, n);
-    for(int i=0; i<10; i++)
-    {
-        std::cout << A[i] << " + " << B[i] << " = " << C[i] << "\n";
-    }
+    std::vector<std::reference_wrapper<SharedArray<int>>> params{A,B,C};
+
+    run_vec_kernel(context, queue, kernels["vector_add"], params);
 
     std::cout << "\n";
-    run_vec_kernel(context, queue, kernels["vector_mult"], A, B, C, n);
     for(int i=0; i<10; i++)
     {
-        std::cout << A[i] << " * " << B[i] << " = " << C[i] << "\n";
+        std::cout << A.cpu_buff[i] << " + " << B.cpu_buff[i] << " = " << C.cpu_buff[i] << "\n";
+    }
+
+    run_vec_kernel(context, queue, kernels["vector_mult"], params);
+
+    std::cout << "\n";
+    for(int i=0; i<10; i++)
+    {
+        std::cout << A.cpu_buff[i] << " * " << B.cpu_buff[i] << " = " << C.cpu_buff[i] << "\n";
     }
 
     return 0;
