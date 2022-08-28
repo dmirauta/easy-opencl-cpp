@@ -110,19 +110,32 @@ template<typename T>
 class SharedArray
 {
     public:
+        int itemsx;
+        int itemsy;
+        int itemsz;
         int items;
+
         int buffsize;
+
         T* cpu_buff;
         cl::Buffer gpu_buff;
 
         std::string _name;
 
-        SharedArray(int n, cl::Context &context, std::string name="arr")
+        SharedArray(cl::Context &context,
+                    int nx,
+                    int ny = 1,
+                    int nz = 1,
+                    std::string name="arr")
         {
             _name = name;
             //std::cout << name << " created\n";
 
-            items = n;
+            itemsx = nx;
+            itemsy = ny;
+            itemsz = nz;
+            items = itemsx * itemsy * itemsz;
+
             buffsize = sizeof(T)*items;
             cpu_buff = new T[items];
             gpu_buff = cl::Buffer(context, CL_MEM_READ_WRITE, buffsize);
@@ -155,14 +168,27 @@ void cast_kernel(cl::Context &context,
                  SharedArray<T> &data)
 {
 
+    cl::NDRange global_dims;
+    if (data.itemsz>1)
+    {
+        global_dims = cl::NDRange(data.itemsx, data.itemsy, data.itemsz);
+    } else if (data.itemsy>1) {
+        global_dims = cl::NDRange(data.itemsx, data.itemsy);
+    } else if (data.itemsx>1) {
+        global_dims = cl::NDRange(data.itemsx);
+    } else {
+        std::cout << "Invalid global dims in cast_kernel?\n";
+        exit(1);
+    }
+
     data.to_gpu(queue);
 
     kernel.setArg(0, data.gpu_buff);
 
     queue.enqueueNDRangeKernel(kernel,
-                               cl::NullRange,           // offset
-                               cl::NDRange(data.items), // global dims
-                               cl::NullRange);          // local  dims (warps/workgroups)
+                               cl::NullRange,  // offset
+                               global_dims,
+                               cl::NullRange); // local  dims (warps/workgroups)
 
     data.from_gpu(queue);
 
@@ -202,7 +228,7 @@ int main(int argc, char* argv[]) {
     //// Adding test
 
     // Setup data
-    SharedArray<AddData> adddata = SharedArray<AddData>(n, context);
+    SharedArray<AddData> adddata = SharedArray<AddData>(context, n);
     for (int i=0; i<n; i++)
     {
         adddata.cpu_buff[i].a = i;
@@ -225,7 +251,7 @@ int main(int argc, char* argv[]) {
     //// Halving test
 
     // Setup data
-    SharedArray<HalfData> halfdata = SharedArray<HalfData>(n, context);
+    SharedArray<HalfData> halfdata = SharedArray<HalfData>(context, n);
     for (int i=0; i<n; i++)
     {
         halfdata.cpu_buff[i].a = i;
