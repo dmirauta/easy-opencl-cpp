@@ -101,7 +101,7 @@ class SharedArray
         SharedArray(int n, cl::Context &context, std::string name="arr")
         {
             _name = name;
-            std::cout << name << " created\n";
+            //std::cout << name << " created\n";
 
             items = n;
             buffsize = sizeof(T)*items;
@@ -111,8 +111,8 @@ class SharedArray
 
         ~SharedArray()
         {
-            std::cout << _name << " destroyed\n";
-
+            //std::cout << _name << " destroyed\n"; // careful to not pass by copy!
+                                                    // starting to appreciate rusts borrow-checker here :)
             delete [] cpu_buff;
         };
 
@@ -129,33 +129,44 @@ class SharedArray
 };
 
 template<typename T>
-void run_vec_kernel(cl::Context &context,
-                    cl::CommandQueue &queue,
-                    cl::Kernel &vec_kernel,
-                    std::vector<std::reference_wrapper<SharedArray<T>>> params)
+void cast_kernel(cl::Context &context,
+                 cl::CommandQueue &queue,
+                 cl::Kernel &kernel,
+                 SharedArray<T> &data)
 {
 
-    for(int i=0; i<params.size(); i++)
-    {
-        params[i].get().to_gpu(queue);
-        vec_kernel.setArg(i, params[i].get().gpu_buff);
-    }
+    data.to_gpu(queue);
+    kernel.setArg(0, data.gpu_buff);
 
-    queue.enqueueNDRangeKernel(vec_kernel, cl::NullRange, cl::NDRange(NUM_GLOBAL_WITEMS), cl::NDRange(32));
+    queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(NUM_GLOBAL_WITEMS), cl::NDRange(32));
 
-    for(auto &par : params)
-    {
-        par.get().from_gpu(queue);
-    }
+    data.from_gpu(queue);
 
     queue.finish(); // blocking
 
 }
 
+struct Data // unnecesarily copying some data to and from by packing like this, but its a simple way to handle many input/output types
+{           // we could also separately handle structs of "Input" (not copied back), "Passedthrough" and "Output" (not copied to)?
+    int a;
+    int b;
+    int c;
+};
+// could also add Param struct for shared kernel args
+// also some concern for GPU packing structs differently?
+
+void print_data(SharedArray<Data> &data, std::string desc, std::string op)
+{
+    std::cout << "\n" << desc <<"\n";
+    for(int i=0; i<20; i++)
+    {
+        std::cout << data.cpu_buff[i].a << op << data.cpu_buff[i].b << " = " << data.cpu_buff[i].c << "\n";
+    }
+}
 
 int main(int argc, char* argv[]) {
 
-    //std::cout << __LINE__ << "\n";
+    //std::cout << "Still working on line " << __LINE__ << "!\n";
 
     bool verbose;
     if (argc == 1 || std::strcmp(argv[1], "0") == 0)
@@ -163,44 +174,31 @@ int main(int argc, char* argv[]) {
     else
         verbose = false;
 
-    const int n = 8*32*512;             // size of vectors
+    const int n = 8*32*512;
 
     cl::Context context;
     cl::Device device;
     cl::CommandQueue queue;
     setup_cl(context, device, queue);
 
-    std::vector<std::string> source_files{"vector_ops_kernel.cl"};
-    std::vector<std::string> kernel_names{"vector_add", "vector_mult"};
+    std::vector<std::string> source_files{"cast.cl"};
+    std::vector<std::string> kernel_names{"add", "mult"};
     std::map<std::string, cl::Kernel> kernels = setup_cl_prog(context, device, source_files, kernel_names);
 
     // construct vectors
-    SharedArray<int> A = SharedArray<int>(n, context, "A");
-    SharedArray<int> B = SharedArray<int>(n, context, "B");
-    SharedArray<int> C = SharedArray<int>(n, context, "C");
+    SharedArray<Data> data = SharedArray<Data>(n, context);
 
-    for (int i=0; i<n; i++) {
-        A.cpu_buff[i] = i;
-        B.cpu_buff[i] = n - i - 1;
-    }
-
-    std::vector<std::reference_wrapper<SharedArray<int>>> params{A,B,C};
-
-    run_vec_kernel(context, queue, kernels["vector_add"], params);
-
-    std::cout << "\n";
-    for(int i=0; i<10; i++)
+    for (int i=0; i<n; i++)
     {
-        std::cout << A.cpu_buff[i] << " + " << B.cpu_buff[i] << " = " << C.cpu_buff[i] << "\n";
+        data.cpu_buff[i].a = i;
+        data.cpu_buff[i].b = n - i - 1;
     }
 
-    run_vec_kernel(context, queue, kernels["vector_mult"], params);
+    cast_kernel(context, queue, kernels["add"], data);
+    print_data(data, "Adding", " + ");
 
-    std::cout << "\n";
-    for(int i=0; i<10; i++)
-    {
-        std::cout << A.cpu_buff[i] << " * " << B.cpu_buff[i] << " = " << C.cpu_buff[i] << "\n";
-    }
+    cast_kernel(context, queue, kernels["mult"], data);
+    print_data(data, "Multiplying", " * ");
 
     return 0;
 }
