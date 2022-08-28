@@ -3,6 +3,7 @@
 #include <sstream>
 #include <map>
 #include <algorithm>
+#include <cassert>
 
 #ifdef __APPLE__
     #include <OpenCL/cl.hpp>
@@ -107,7 +108,7 @@ std::map<std::string, cl::Kernel> setup_cl_prog(cl::Context &context,
 }
 
 template<typename T>
-class SharedArray
+class SynchronisedArray
 {
     public:
         int itemsx;
@@ -122,7 +123,7 @@ class SharedArray
 
         std::string _name;
 
-        SharedArray(cl::Context &context,
+        SynchronisedArray(cl::Context &context,
                     int nx,
                     int ny = 1,
                     int nz = 1,
@@ -141,7 +142,7 @@ class SharedArray
             gpu_buff = cl::Buffer(context, CL_MEM_READ_WRITE, buffsize);
         };
 
-        ~SharedArray()
+        ~SynchronisedArray()
         {
             //std::cout << _name << " destroyed\n"; // careful to not pass by copy!
                                                     // starting to appreciate rusts borrow-checker here :)
@@ -157,15 +158,37 @@ class SharedArray
         {
             queue.enqueueReadBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
         };
+
+        T& operator[](std::size_t i)
+        {
+            assert(i<itemsx);
+            return cpu_buff[i];
+        }
+
+        T& operator[](std::size_t i, std::size_t j) // requires -std=c++23
+        {
+            assert(i<itemsx);
+            assert(j<itemsy);
+            return cpu_buff[i*itemsy + j];
+        }
+
+        T& operator[](std::size_t i, std::size_t j, std::size_t k)
+        {
+            assert(i<itemsx);
+            assert(j<itemsy);
+            assert(k<itemsz);
+            return cpu_buff[ (i*itemsy + j)*itemsz + k ];
+        }
+
+
 //    private:
 };
 
-// 1D cast
 template<typename T>
-void cast_kernel(cl::Context &context,
-                 cl::CommandQueue &queue,
-                 cl::Kernel &kernel,
-                 SharedArray<T> &data)
+void apply_kernel(cl::Context &context,
+                  cl::CommandQueue &queue,
+                  cl::Kernel &kernel,
+                  SynchronisedArray<T> &data)
 {
 
     cl::NDRange global_dims;
@@ -177,7 +200,7 @@ void cast_kernel(cl::Context &context,
     } else if (data.itemsx>1) {
         global_dims = cl::NDRange(data.itemsx);
     } else {
-        std::cout << "Invalid global dims in cast_kernel?\n";
+        std::cout << "Invalid global dims in apply_kernel? (based on input data)\n";
         exit(1);
     }
 
@@ -212,9 +235,6 @@ int main(int argc, char* argv[]) {
     else
         verbose = false;
 
-    const int n = 8*32*512;
-    int n_preview = std::min(n, 20);
-
     cl::Context context;
     cl::Device device;
     cl::CommandQueue queue;
@@ -227,45 +247,56 @@ int main(int argc, char* argv[]) {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Adding test
 
+    const int m = 1024;
+    const int _m_preview = 3;
+
     // Setup data
-    SharedArray<AddData> adddata = SharedArray<AddData>(context, n);
-    for (int i=0; i<n; i++)
+    SynchronisedArray<AddData> adddata = SynchronisedArray<AddData>(context, m, m);
+    for (int i=0; i<m; i++)
     {
-        adddata.cpu_buff[i].a = i;
-        adddata.cpu_buff[i].b = n - i - 1;
+        for (int j=0; j<m; j++)
+        {
+            adddata[i, j].a = i;
+            adddata[i, j].b = j;
+        }
     }
 
     // Run kernel
-    cast_kernel(context, queue, kernels["_add"], adddata);
-
-    // Preview output
-    std::cout << "\n" << "Adding (last " << n_preview <<")\n";
-    for(int i=n-n_preview; i<n; i++)
+    apply_kernel(context, queue, kernels["_add"], adddata);
+    // Preview results
+    std::cout << "\n" << "Adding (last "<<_m_preview<<"x"<<_m_preview<<")\n";
+    for(int i=m-_m_preview; i<m; i++)
     {
-        std::cout << adddata.cpu_buff[i].a << " + "
-                  << adddata.cpu_buff[i].b << " = "
-                  << adddata.cpu_buff[i].c << "\n";
+        for(int j=m-_m_preview; j<m; j++)
+        {
+            std::cout << adddata[i, j].a << " + "
+                      << adddata[i, j].b << " = "
+                      << adddata[i, j].c << "\n";
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Halving test
 
+    const int n = 8*32*512;
+    const int n_preview = 10;
+
     // Setup data
-    SharedArray<HalfData> halfdata = SharedArray<HalfData>(context, n);
+    SynchronisedArray<HalfData> halfdata = SynchronisedArray<HalfData>(context, n);
     for (int i=0; i<n; i++)
     {
-        halfdata.cpu_buff[i].a = i;
+        halfdata[i].a = i;
     }
 
     // Run kernel
-    cast_kernel(context, queue, kernels["_half"], halfdata);
+    apply_kernel(context, queue, kernels["_half"], halfdata);
 
-    // Preview output
+    // Preview results
     std::cout << "\n" << "Halving (first " << n_preview <<")\n";
     for(int i=0; i<n_preview; i++)
     {
-        std::cout << halfdata.cpu_buff[i].a << "/2 = "
-                  << halfdata.cpu_buff[i].b << "\n";
+        std::cout << halfdata[i].a << "/2 = "
+                  << halfdata[i].b << "\n";
     }
 
     return 0;
