@@ -1,12 +1,5 @@
- 
-struct Data
-{
-    int a;
-    int b;
-    int c;
-};
 
-__kernel void add(__global struct Data *data)
+__kernel void _add(__global struct AddData *data)
 {
 
     int i = get_global_id(0);
@@ -15,11 +8,11 @@ __kernel void add(__global struct Data *data)
 
 }
 
-__kernel void mult(__global struct Data *data)
+__kernel void _half(__global struct HalfData *data)
 {
 
     int i = get_global_id(0);
 
-    data[i].c = data[i].a * data[i].b;
+    data[i].b = 0.5 * data[i].a;
 
 }

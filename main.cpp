@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <algorithm>
 
 #ifdef __APPLE__
     #include <OpenCL/cl.hpp>
@@ -9,7 +10,7 @@
     #include <CL/cl.hpp>
 #endif
 
-#define NUM_GLOBAL_WITEMS 1024
+#include "datastructs.c"
 
 
 // https://stackoverflow.com/a/62772405
@@ -30,7 +31,8 @@ std::string read_string_from_file(const std::string &file_path) {
 
 void setup_cl(cl::Context &context,
               cl::Device &device,
-              cl::CommandQueue &queue)
+              cl::CommandQueue &queue,
+              bool verbose = false)
 {
      // get all platforms (drivers), e.g. NVIDIA
     std::vector<cl::Platform> all_platforms;
@@ -41,9 +43,7 @@ void setup_cl(cl::Context &context,
         exit(1);
     }
     cl::Platform default_platform=all_platforms[0];
-    // std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
 
-    // get default device (CPUs, GPUs) of the default platform
     std::vector<cl::Device> all_devices;
     default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
     if(all_devices.size()==0){
@@ -52,25 +52,44 @@ void setup_cl(cl::Context &context,
     }
 
     device=all_devices[0];
-    std::cout<< "Using device: "<<device.getInfo<CL_DEVICE_NAME>()<<"\n";
     context = cl::Context({device});
     queue = cl::CommandQueue(context, device);
+
+    if (verbose)
+    {
+        std::cout << "Using platform: "<<default_platform.getInfo<CL_PLATFORM_NAME>()<<"\n";
+        std::cout << "Using device: "<<device.getInfo<CL_DEVICE_NAME>()<<"\n";
+    }
 }
 
 std::map<std::string, cl::Kernel> setup_cl_prog(cl::Context &context,
                                                 cl::Device &device,
                                                 std::vector<std::string> source_files,
-                                                std::vector<std::string> kernel_names)
+                                                std::vector<std::string> kernel_names,
+                                                bool verbose = false)
 {
     cl::Program::Sources sources;
 
-    std::string kernel_code;
+//     // Not sure how this is supposed to work
+//     std::string kernel_code;
+//     for(auto source_file : source_files)
+//     {
+//         kernel_code = read_string_from_file(source_file);
+//         sources.push_back({kernel_code.c_str(), kernel_code.length()});
+//     }
+
+    std::string kernel_code = "";
     for(auto source_file : source_files)
     {
-        kernel_code = read_string_from_file(source_file);
-        sources.push_back({kernel_code.c_str(), kernel_code.length()});
+        kernel_code += read_string_from_file(source_file);
     }
+    sources.push_back({kernel_code.c_str(), kernel_code.length()});
 
+    if (verbose)
+    {
+        std::cout << "Source:\n"
+                  << kernel_code;
+    }
 
     cl::Program program(context, sources);
     if (program.build({device}) != CL_SUCCESS) {
@@ -128,6 +147,7 @@ class SharedArray
 //    private:
 };
 
+// 1D cast
 template<typename T>
 void cast_kernel(cl::Context &context,
                  cl::CommandQueue &queue,
@@ -136,9 +156,13 @@ void cast_kernel(cl::Context &context,
 {
 
     data.to_gpu(queue);
+
     kernel.setArg(0, data.gpu_buff);
 
-    queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(NUM_GLOBAL_WITEMS), cl::NDRange(32));
+    queue.enqueueNDRangeKernel(kernel,
+                               cl::NullRange,           // offset
+                               cl::NDRange(data.items), // global dims
+                               cl::NullRange);          // local  dims (warps/workgroups)
 
     data.from_gpu(queue);
 
@@ -146,59 +170,77 @@ void cast_kernel(cl::Context &context,
 
 }
 
-struct Data // unnecesarily copying some data to and from by packing like this, but its a simple way to handle many input/output types
-{           // we could also separately handle structs of "Input" (not copied back), "Passedthrough" and "Output" (not copied to)?
-    int a;
-    int b;
-    int c;
-};
+// unnecesarily copying some data to and from by packing like this, but its a simple way to handle many input/output types
+// we could also separately handle structs of "Input" (not copied back), "Passedthrough" and "Output" (not copied to)?
 // could also add Param struct for shared kernel args
 // also some concern for GPU packing structs differently?
 
-void print_data(SharedArray<Data> &data, std::string desc, std::string op)
-{
-    std::cout << "\n" << desc <<"\n";
-    for(int i=0; i<20; i++)
-    {
-        std::cout << data.cpu_buff[i].a << op << data.cpu_buff[i].b << " = " << data.cpu_buff[i].c << "\n";
-    }
-}
 
 int main(int argc, char* argv[]) {
 
     //std::cout << "Still working on line " << __LINE__ << "!\n";
 
     bool verbose;
-    if (argc == 1 || std::strcmp(argv[1], "0") == 0)
+    if (argc > 1 && std::strcmp(argv[1], "1") == 0)
         verbose = true;
     else
         verbose = false;
 
     const int n = 8*32*512;
+    int n_preview = std::min(n, 20);
 
     cl::Context context;
     cl::Device device;
     cl::CommandQueue queue;
-    setup_cl(context, device, queue);
+    setup_cl(context, device, queue, verbose);
 
-    std::vector<std::string> source_files{"cast.cl"};
-    std::vector<std::string> kernel_names{"add", "mult"};
-    std::map<std::string, cl::Kernel> kernels = setup_cl_prog(context, device, source_files, kernel_names);
+    std::vector<std::string> source_files{"datastructs.c", "cast.cl"};
+    std::vector<std::string> kernel_names{"_add", "_half"};
+    std::map<std::string, cl::Kernel> kernels = setup_cl_prog(context, device, source_files, kernel_names, verbose);
 
-    // construct vectors
-    SharedArray<Data> data = SharedArray<Data>(n, context);
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Adding test
 
+    // Setup data
+    SharedArray<AddData> adddata = SharedArray<AddData>(n, context);
     for (int i=0; i<n; i++)
     {
-        data.cpu_buff[i].a = i;
-        data.cpu_buff[i].b = n - i - 1;
+        adddata.cpu_buff[i].a = i;
+        adddata.cpu_buff[i].b = n - i - 1;
     }
 
-    cast_kernel(context, queue, kernels["add"], data);
-    print_data(data, "Adding", " + ");
+    // Run kernel
+    cast_kernel(context, queue, kernels["_add"], adddata);
 
-    cast_kernel(context, queue, kernels["mult"], data);
-    print_data(data, "Multiplying", " * ");
+    // Preview output
+    std::cout << "\n" << "Adding (last " << n_preview <<")\n";
+    for(int i=n-n_preview; i<n; i++)
+    {
+        std::cout << adddata.cpu_buff[i].a << " + "
+                  << adddata.cpu_buff[i].b << " = "
+                  << adddata.cpu_buff[i].c << "\n";
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Halving test
+
+    // Setup data
+    SharedArray<HalfData> halfdata = SharedArray<HalfData>(n, context);
+    for (int i=0; i<n; i++)
+    {
+        halfdata.cpu_buff[i].a = i;
+    }
+
+    // Run kernel
+    cast_kernel(context, queue, kernels["_half"], halfdata);
+
+    // Preview output
+    std::cout << "\n" << "Halving (first " << n_preview <<")\n";
+    for(int i=0; i<n_preview; i++)
+    {
+        std::cout << halfdata.cpu_buff[i].a << "/2 = "
+                  << halfdata.cpu_buff[i].b << "\n";
+    }
 
     return 0;
 }
