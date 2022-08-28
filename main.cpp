@@ -247,14 +247,15 @@ int main(int argc, char* argv[]) {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Adding test
 
-    const int m = 1024;
+    const int m1 = 1024;
+    const int m2 = 768;
     const int _m_preview = 3;
 
     // Setup data
-    SynchronisedArray<AddData> adddata = SynchronisedArray<AddData>(context, m, m);
-    for (int i=0; i<m; i++)
+    SynchronisedArray<AddData> adddata = SynchronisedArray<AddData>(context, m1, m2);
+    for (int i=0; i<m1; i++)
     {
-        for (int j=0; j<m; j++)
+        for (int j=0; j<m2; j++)
         {
             adddata[i, j].a = i;
             adddata[i, j].b = j;
@@ -265,9 +266,9 @@ int main(int argc, char* argv[]) {
     apply_kernel(context, queue, kernels["_add"], adddata);
     // Preview results
     std::cout << "\n" << "Adding (last "<<_m_preview<<"x"<<_m_preview<<")\n";
-    for(int i=m-_m_preview; i<m; i++)
+    for(int i=m1-_m_preview; i<m1; i++)
     {
-        for(int j=m-_m_preview; j<m; j++)
+        for(int j=m2-_m_preview; j<m2; j++)
         {
             std::cout << adddata[i, j].a << " + "
                       << adddata[i, j].b << " = "
