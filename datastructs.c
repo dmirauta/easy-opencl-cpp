@@ -6,7 +6,7 @@ struct AddData
     int c;
 };
 
-struct HalfData
+struct HalveData
 {
     int a;
     float b;

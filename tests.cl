@@ -11,11 +11,15 @@ __kernel void _add(__global struct AddData *data)
 
 }
 
-__kernel void _half(__global struct HalfData *data)
+__kernel void _halve(__global struct HalveData *data)
 {
 
     int i = get_global_id(0);
 
+    #ifdef HALVE_IS_QUARTER
+    data[i].b = 0.25 * data[i].a;
+    #else
     data[i].b = 0.5 * data[i].a;
+    #endif
 
 }
