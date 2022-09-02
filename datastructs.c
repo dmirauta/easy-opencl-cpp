@@ -1,13 +1,13 @@
 
-struct AddData
+typedef struct AddData
 {
     int a;
     int b;
     int c;
-};
+} AddData_t;
 
-struct HalveData
+typedef struct HalveData
 {
     int a;
     float b;
-};
+} HalveData_t;

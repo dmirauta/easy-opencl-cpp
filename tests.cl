@@ -1,5 +1,5 @@
 
-__kernel void _add(__global struct AddData *data)
+__kernel void _add(__global AddData_t *data)
 {
 
     int i = get_global_id(0);
@@ -11,7 +11,7 @@ __kernel void _add(__global struct AddData *data)
 
 }
 
-__kernel void _halve(__global struct HalveData *data)
+__kernel void _halve(__global HalveData_t *data)
 {
 
     int i = get_global_id(0);

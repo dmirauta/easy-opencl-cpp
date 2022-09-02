@@ -13,8 +13,6 @@
 
     #include "synchronised_array.hpp"
 
-    std::string read_string_from_file(const std::string &file_path);
-
     void setup_cl(cl::Context &context,
                   cl::Device &device,
                   cl::CommandQueue &queue,
