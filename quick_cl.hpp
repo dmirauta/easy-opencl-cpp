@@ -31,6 +31,6 @@
                     cl::Kernel &kernel,
                     SynchronisedArray<T> &data);
 
-    #include "quick_cl.cpp"
+    #include "quick_cl.cpp" // to ensure compilation of relevant T's in including files
 
 #endif

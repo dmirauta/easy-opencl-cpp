@@ -1,14 +1,17 @@
 #include <iostream>
 
-#include "quick_cl.hpp"
+#include "quick_cl.hpp"             // this includes cpp files, so only test.cpp file needs to be compiled
+//#include "synchronised_array.hpp" // imports are set up like this so that needed versions of templated classes are automatically picked up
 #include "datastructs.c"
+
+using namespace std;
 
 int main(int argc, char* argv[]) {
 
-    //std::cout << "Still working on line " << __LINE__ << "!\n";
+    //cout << "Still working on line " << __LINE__ << "!\n";
 
     bool verbose;
-    if (argc > 1 && std::strcmp(argv[1], "1") == 0)
+    if (argc > 1 && strcmp(argv[1], "1") == 0)
         verbose = true;
     else
         verbose = false;
@@ -18,10 +21,10 @@ int main(int argc, char* argv[]) {
     cl::CommandQueue queue;
     setup_cl(context, device, queue, verbose);
 
-    std::string build_options = "-D HALVE_IS_QUARTER";
-    std::vector<std::string> source_files{"datastructs.c", "tests.cl"};
-    std::vector<std::string> kernel_names{"_add", "_halve"};
-    std::map<std::string, cl::Kernel> kernels = setup_cl_prog(context, device, source_files, kernel_names, build_options, verbose);
+    string build_options = "-D HALVE_IS_QUARTER";
+    vector<string> source_files{"datastructs.c", "tests.cl"};
+    vector<string> kernel_names{"_add", "_halve"};
+    map<string, cl::Kernel> kernels = setup_cl_prog(context, device, source_files, kernel_names, build_options, verbose);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Adding test
@@ -44,14 +47,14 @@ int main(int argc, char* argv[]) {
     // Run kernel
     apply_kernel(context, queue, kernels["_add"], adddata);
     // Preview results
-    std::cout << "\n" << "Adding (viewing last "<<_m_preview<<"x"<<_m_preview<<")\n";
+    cout << "\n" << "Adding (viewing last "<<_m_preview<<"x"<<_m_preview<<")\n";
     for(int i=m1-_m_preview; i<m1; i++)
     {
         for(int j=m2-_m_preview; j<m2; j++)
         {
-            std::cout << adddata[i, j].a << " + "
-                      << adddata[i, j].b << " = "
-                      << adddata[i, j].c << "\n";
+            cout << adddata[i, j].a << " + "
+                 << adddata[i, j].b << " = "
+                 << adddata[i, j].c << "\n";
         }
     }
 
@@ -72,11 +75,11 @@ int main(int argc, char* argv[]) {
     apply_kernel(context, queue, kernels["_halve"], halfdata);
 
     // Preview results
-    std::cout << "\n" << "Halving (viewing first " << n_preview <<")\n";
+    cout << "\n" << "Halving (viewing first " << n_preview <<")\n";
     for(int i=0; i<n_preview; i++)
     {
-        std::cout << halfdata[i].a << "/2 = "
-                  << halfdata[i].b << "\n";
+        cout << halfdata[i].a << "/2 = "
+             << halfdata[i].b << "\n";
     }
 
     return 0;
