@@ -104,7 +104,8 @@ template<typename T>
 void apply_kernel(cl::Context &context,
                   cl::CommandQueue &queue,
                   cl::Kernel &kernel,
-                  SynchronisedArray<T> &data)
+                  SynchronisedArray<T> &data,
+                  bool blocking)
 {
 
     cl::NDRange global_dims;
@@ -131,6 +132,7 @@ void apply_kernel(cl::Context &context,
 
     data.from_gpu(queue);
 
-    queue.finish(); // blocking
+    if (blocking)
+        queue.finish();
 
 }

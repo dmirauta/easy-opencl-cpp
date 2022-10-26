@@ -29,7 +29,8 @@
     void apply_kernel(cl::Context &context,
                     cl::CommandQueue &queue,
                     cl::Kernel &kernel,
-                    SynchronisedArray<T> &data);
+                    SynchronisedArray<T> &data,
+                    bool blocking = true);
 
     #include "quick_cl.cpp" // to ensure compilation of relevant T's in including files
 
