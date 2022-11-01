@@ -80,8 +80,8 @@ std::map<std::string, cl::Kernel> setup_cl_prog(cl::Context &context,
     if (verbose)
     {
         std::cout << "Build options:\n"
-                  << build_options << "\n";
-        std::cout << "Source:\n"
+                  << build_options << "\n"
+                  << "Source:\n"
                   << kernel_code;
     }
 
@@ -136,3 +136,28 @@ void apply_kernel(cl::Context &context,
         queue.finish();
 
 }
+
+EasyCL::EasyCL(bool verbose)
+{
+    _verbose = verbose;
+    setup_cl(context, device, queue, verbose);
+}
+
+void EasyCL::load_kernels(std::vector<std::string> source_files,
+                          std::vector<std::string> kernel_names,
+                          std::string build_options)
+{
+    std::map<std::string, cl::Kernel> new_kernels = setup_cl_prog(context, device, source_files, kernel_names, build_options, _verbose);
+
+    for (auto pair: new_kernels)
+    {
+        kernels[pair.first] = pair.second;
+    }
+}
+
+template<typename T>
+void apply_kernel(EasyCL ecl, std::string kernel_name, SynchronisedArray<T> &data)
+{
+    apply_kernel(ecl.context, ecl.queue, ecl.kernels[kernel_name], data);
+}
+

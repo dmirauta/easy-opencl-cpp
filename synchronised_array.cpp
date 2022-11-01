@@ -23,7 +23,7 @@ template<typename T>
 SynchronisedArray<T>::~SynchronisedArray()
 {
     //std::cout << _name << " destroyed\n"; // careful to not pass by copy!
-                                            // starting to appreciate rusts borrow-checker here :)
+                                            // starting to appreciate the idea of rusts borrow-checker here :)
     delete [] cpu_buff;
 }
 

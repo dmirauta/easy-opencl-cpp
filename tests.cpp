@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "quick_cl.hpp"             // this includes cpp files, so only test.cpp file needs to be compiled
+#include "easy_cl.hpp"             // this includes cpp files, so only test.cpp file needs to be compiled
 //#include "synchronised_array.hpp" // imports are set up like this so that needed versions of templated classes are automatically picked up
 #include "datastructs.c"
 
@@ -16,15 +16,11 @@ int main(int argc, char* argv[]) {
     else
         verbose = false;
 
-    cl::Context context;
-    cl::Device device;
-    cl::CommandQueue queue;
-    setup_cl(context, device, queue, verbose);
+    EasyCL ecl(verbose);
 
-    string build_options = "-D HALVE_IS_QUARTER";
     vector<string> source_files{"datastructs.c", "tests.cl"};
     vector<string> kernel_names{"_add", "_halve"};
-    map<string, cl::Kernel> kernels = setup_cl_prog(context, device, source_files, kernel_names, build_options, verbose);
+    ecl.load_kernels(source_files, kernel_names, "-D HALVE_IS_QUARTER");
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Adding test
@@ -34,7 +30,7 @@ int main(int argc, char* argv[]) {
     const int _m_preview = 3;
 
     // Setup data
-    SynchronisedArray<AddData> adddata = SynchronisedArray<AddData>(context, m1, m2);
+    SynchronisedArray<AddData> adddata(ecl.context, m1, m2);
     for (int i=0; i<m1; i++)
     {
         for (int j=0; j<m2; j++)
@@ -45,7 +41,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Run kernel
-    apply_kernel(context, queue, kernels["_add"], adddata);
+    apply_kernel(ecl, "_add", adddata);
     // Preview results
     cout << "\n" << "Adding (viewing last "<<_m_preview<<"x"<<_m_preview<<")\n";
     for(int i=m1-_m_preview; i<m1; i++)
@@ -65,14 +61,14 @@ int main(int argc, char* argv[]) {
     const int n_preview = 10;
 
     // Setup data
-    SynchronisedArray<HalveData> halfdata = SynchronisedArray<HalveData>(context, n);
+    SynchronisedArray<HalveData> halfdata(ecl.context, n);
     for (int i=0; i<n; i++)
     {
         halfdata[i].a = i;
     }
 
     // Run kernel
-    apply_kernel(context, queue, kernels["_halve"], halfdata);
+    apply_kernel(ecl, "_halve", halfdata);
 
     // Preview results
     cout << "\n" << "Halving (viewing first " << n_preview <<")\n";
