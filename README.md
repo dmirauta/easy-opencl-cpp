@@ -16,3 +16,13 @@ May require pointing to OCL header location e.g.
 * Makefile
 
 * GLCL interop?
+
+* unnecesarily copying some data to and from by packing like this, apply_kernel should, on top of normal SynchronisedArray have options along the lines of:
+
+    * InputOnlySA (not copied back)
+
+    * OutputOnlySA (not copied to, presumably instantiated on device)
+
+    * A Param struct, to be shared (across all work items)
+
+* also some concern for GPU packing structs differently?

@@ -50,7 +50,7 @@
                               std::string build_options);
 
     template<typename T>
-    void apply_kernel(EasyCL ecl, std::string kernel_name, SynchronisedArray<T> &data);
+    void apply_kernel(EasyCL &ecl, std::string kernel_name, SynchronisedArray<T> &data);
 
     };
 

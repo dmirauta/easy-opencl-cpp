@@ -1,7 +1,3 @@
-// unnecesarily copying some data to and from by packing like this, but its a simple way to handle many input/output types
-// we could also separately handle structs of "Input" (not copied back), "Passedthrough" and "Output" (not copied to)?
-// could also add Param struct for shared kernel args
-// also some concern for GPU packing structs differently?
 
 #ifndef SYNCHRONISED_ARRAY_
 

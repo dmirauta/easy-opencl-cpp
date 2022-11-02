@@ -156,7 +156,7 @@ void EasyCL::load_kernels(std::vector<std::string> source_files,
 }
 
 template<typename T>
-void apply_kernel(EasyCL ecl, std::string kernel_name, SynchronisedArray<T> &data)
+void apply_kernel(EasyCL &ecl, std::string kernel_name, SynchronisedArray<T> &data)
 {
     apply_kernel(ecl.context, ecl.queue, ecl.kernels[kernel_name], data);
 }
