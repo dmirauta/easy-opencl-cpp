@@ -8,9 +8,9 @@ Files required:
 
 * A header defining the structs that need to be streamed to and from gpu (e.g `datastructs.h`), this will be used on both sides.
 
-* A cl file defining any kernels (e.g `kernels.cl`), each being expected to loop through an array of a specified datatype.
+* A cl file defining any kernels (e.g `kernels.cl`), each being expected to loop through an array of a datatype specified in `datastructs.h`.
 
-    * To keep the code clean, the operations of a single iteration could optionally be defined in one or more separate source files (e.g `kernelutils.c`). These could be C98 functions that can also be compiled and debugged ordinarily (with `gcc` for instance).
+    * To keep the code clean, the operations of a single work item could optionally be defined in one or more separate source files (e.g `kernelutils.c`). These could be C98 functions that can also be compiled and debugged ordinarily (with `gcc` for instance).
 
 * Any source files used by the kernel.
 
@@ -22,15 +22,15 @@ A program (see `examples/test`) using this wrapper then:
 
 * Loads the required kernels with `ecl.load_kernels(source_files, kernel_names, build_options)`
 
-* The for each loaded kernel it wishes to apply:
+* Then for each loaded kernel it wishes to apply:
 
-    * Creates a `SynchronisedArray<DataStruct> data(ecl.context, X [,Y ,Z] )`
+    * Creates a `SynchronisedArray<DataStruct> data(ecl.context, X [,Y ,Z])`
 
-    * Initilses this data (e.g `data[2,3].input_a = 2`, `data[2,3].input_b = 3.7`, `data[2,3].input_c = 0`)
+    * Initilses this data (e.g `data[2,3].input_a = 2`, `data[2,3].input_b = 3.7`, `data[2,3].output_c = 0`)
 
     * Applies one of the loaded kernels on this object `apply_kernel(ecl, "_add", data)`
 
-    * When the kernel is finished, the `SynchronisedArray` will update with any changes made by the kernel, for instance we might now have `data[2,3].input_c = 5.7`
+    * When the kernel is finished, the `SynchronisedArray` will update with any changes made by the kernel, for instance we might now have `data[2,3].output_c = 5.7`
 
 ## Compilation
 
