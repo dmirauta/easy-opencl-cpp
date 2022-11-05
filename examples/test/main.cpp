@@ -1,7 +1,8 @@
 #include <iostream>
 
-#include "../../src/easy_cl.hpp"    // in order for the templates required (here) to be compiled, this header infact also includes definitions
-#include "datastructs.h"  // struct definitions used in both c++ and opencl
+#include "easy_cl.hpp" 
+#include "synchronised_array.hpp" // header only, templated class
+#include "datastructs.h"          // struct definitions used in both c++ and opencl
 
 using namespace std;
 
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Run kernel
-    apply_kernel(ecl, "_add", adddata);
+    ecl.apply_kernel("_add", adddata);
     
     // Preview results
     cout << "\n" << "Adding (viewing last "<<_m_preview<<"x"<<_m_preview<<")\n";
@@ -68,7 +69,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Run kernel
-    apply_kernel(ecl, "_halve_or_quarter", hoqdata);
+    ecl.apply_kernel("_halve_or_quarter", hoqdata);
 
     // Preview results
     cout << "\n" << "Halving or quartering (depending on build options) (viewing first " << n_preview <<")\n";

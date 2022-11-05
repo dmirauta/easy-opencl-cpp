@@ -7,25 +7,7 @@
 
     #include <CL/cl.hpp> // Apple import differs, but removed for brevity
 
-    #include "synchronised_array.hpp"
-
-    void setup_cl(cl::Context &context,
-                  cl::Device &device,
-                  cl::CommandQueue &queue,
-                  bool verbose = false);
-
-    std::map<std::string, cl::Kernel> setup_cl_prog(cl::Context &context,
-                                                    cl::Device &device,
-                                                    std::vector<std::string> source_files,
-                                                    std::vector<std::string> kernel_names,
-                                                    std::string build_options,
-                                                    bool verbose = false);
-
-    template<typename T>
-    void apply_kernel(cl::CommandQueue &queue,
-                      cl::Kernel &kernel,
-                      SynchronisedArray<T> &data,
-                      bool blocking = true);
+    #include "abstract_synchronised_array.hpp"
 
     class EasyCL
     {
@@ -44,12 +26,9 @@
                               std::vector<std::string> kernel_names,
                               std::string build_options);
 
-    template<typename T>
-    void apply_kernel(EasyCL &ecl, std::string kernel_name, SynchronisedArray<T> &data);
+            void apply_kernel(std::string kernel_name, 
+                              AbstractSynchronisedArray &data);
 
     };
-
-    // bring in definitions to ensure compilation of relevant T's in including files
-    #include "easy_cl.cpp"
 
 #endif

@@ -16,7 +16,7 @@ Files required:
 
 A program (see `examples/test/main.cpp`) using this wrapper then:
 
-* Includes `src/easy_cl.hpp`
+* Includes `easy_cl.hpp`, `synchronised_array.hpp` and the user defined `datastructs.h`
 
 * Creates an `EasyCL` object which initialises a device
 
@@ -34,10 +34,7 @@ A program (see `examples/test/main.cpp`) using this wrapper then:
 
 ## Compilation
 
-May require pointing to OCL header location e.g.
-`export CPLUS_INCLUDE_PATH="/opt/rocm/include"`
-
-`g++ -lOpenCL -std=c++23 -o test.out main.cpp`
+See `examples/test/makefile`
 
 ## TODO
 
@@ -53,4 +50,4 @@ May require pointing to OCL header location e.g.
 
     * A Param struct, to be shared (across all work items)
 
-* Potential concern for different compilers packing structs differently? (causing missmatch in reading and writing between c++ and opencl?)
+* Potential concern for different compilers packing structs differently? (causing mismatch in reading and writing between c++ and opencl?)

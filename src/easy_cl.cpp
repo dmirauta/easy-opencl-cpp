@@ -2,8 +2,7 @@
 #include <fstream>
 #include <sstream>
 
-// not including since this is imported by
-//#include "easy_cl.hpp"
+#include "easy_cl.hpp"
 
 // https://stackoverflow.com/a/62772405
 std::string read_string_from_file(const std::string &file_path) {
@@ -20,10 +19,10 @@ std::string read_string_from_file(const std::string &file_path) {
 }
 // file otherwise mostly based on https://github.com/Dakkers/OpenCL-examples/blob/master/example01/main.cpp
 
-void setup_cl(cl::Context &context,
-              cl::Device &device,
-              cl::CommandQueue &queue,
-              bool verbose)
+void setup_ocl(cl::Context &context,
+               cl::Device &device,
+               cl::CommandQueue &queue,
+               bool verbose)
 {
      // get all platforms (drivers), e.g. NVIDIA
     std::vector<cl::Platform> all_platforms;
@@ -53,16 +52,16 @@ void setup_cl(cl::Context &context,
     }
 }
 
-std::map<std::string, cl::Kernel> setup_cl_prog(cl::Context &context,
-                                                cl::Device &device,
-                                                std::vector<std::string> source_files,
-                                                std::vector<std::string> kernel_names,
-                                                std::string build_options,
-                                                bool verbose)
+std::map<std::string, cl::Kernel> setup_ocl_prog(cl::Context &context,
+                                                 cl::Device &device,
+                                                 std::vector<std::string> source_files,
+                                                 std::vector<std::string> kernel_names,
+                                                 std::string build_options,
+                                                 bool verbose)
 {
     cl::Program::Sources sources;
 
-//     // Not sure how this is supposed to work
+//     // Not sure how multiple sources are actually supposed to be provided, we will just concatenate
 //     std::string kernel_code;
 //     for(auto source_file : source_files)
 //     {
@@ -100,11 +99,10 @@ std::map<std::string, cl::Kernel> setup_cl_prog(cl::Context &context,
     return kernels;
 }
 
-template<typename T>
-void apply_kernel(cl::CommandQueue &queue,
-                  cl::Kernel &kernel,
-                  SynchronisedArray<T> &data,
-                  bool blocking)
+void apply_ocl_kernel(cl::CommandQueue &queue,
+                      cl::Kernel &kernel,
+                      AbstractSynchronisedArray &data,
+                      bool blocking)
 {
 
     cl::NDRange global_dims;
@@ -139,14 +137,14 @@ void apply_kernel(cl::CommandQueue &queue,
 EasyCL::EasyCL(bool verbose)
 {
     _verbose = verbose;
-    setup_cl(context, device, queue, verbose);
+    setup_ocl(context, device, queue, verbose);
 }
 
 void EasyCL::load_kernels(std::vector<std::string> source_files,
                           std::vector<std::string> kernel_names,
                           std::string build_options)
 {
-    std::map<std::string, cl::Kernel> new_kernels = setup_cl_prog(context, device, source_files, kernel_names, build_options, _verbose);
+    std::map<std::string, cl::Kernel> new_kernels = setup_ocl_prog(context, device, source_files, kernel_names, build_options, _verbose);
 
     for (auto pair: new_kernels)
     {
@@ -154,9 +152,7 @@ void EasyCL::load_kernels(std::vector<std::string> source_files,
     }
 }
 
-template<typename T>
-void apply_kernel(EasyCL &ecl, std::string kernel_name, SynchronisedArray<T> &data)
+void EasyCL::apply_kernel(std::string kernel_name, AbstractSynchronisedArray &data)
 {
-    apply_kernel(ecl.queue, ecl.kernels[kernel_name], data);
+    apply_ocl_kernel(queue, kernels[kernel_name], data, true);
 }
-
