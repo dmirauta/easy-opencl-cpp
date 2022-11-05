@@ -1,8 +1,7 @@
 #include <iostream>
 
-#include "easy_cl.hpp"             // this includes cpp files, so only test.cpp file needs to be compiled
-//#include "synchronised_array.hpp" // imports are set up like this so that needed versions of templated classes are automatically picked up
-#include "datastructs.c"
+#include "../../src/easy_cl.hpp"    // in order for the templates required (here) to be compiled, this header infact also includes definitions
+#include "datastructs.h"  // struct definitions used in both c++ and opencl
 
 using namespace std;
 
@@ -18,8 +17,8 @@ int main(int argc, char* argv[]) {
 
     EasyCL ecl(verbose);
 
-    vector<string> source_files{"datastructs.c", "tests.cl"};
-    vector<string> kernel_names{"_add", "_halve"};
+    vector<string> source_files{"datastructs.h", "kernelutils.c", "kernels.cl"};
+    vector<string> kernel_names{"_add", "_halve_or_quarter"};
     ecl.load_kernels(source_files, kernel_names, "-D HALVE_IS_QUARTER");
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -55,27 +54,27 @@ int main(int argc, char* argv[]) {
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    //// Halving test
+    //// Halve or quorter test
 
     const int n = 8*32*512;
     const int n_preview = 10;
 
     // Setup data
-    SynchronisedArray<HalveData> halfdata(ecl.context, n);
+    SynchronisedArray<HoQData> hoqdata(ecl.context, n);
     for (int i=0; i<n; i++)
     {
-        halfdata[i].a = i;
+        hoqdata[i].a = i;
     }
 
     // Run kernel
-    apply_kernel(ecl, "_halve", halfdata);
+    apply_kernel(ecl, "_halve_or_quarter", hoqdata);
 
     // Preview results
-    cout << "\n" << "Halving (viewing first " << n_preview <<")\n";
+    cout << "\n" << "Halving or quartering (depending on build options) (viewing first " << n_preview <<")\n";
     for(int i=0; i<n_preview; i++)
     {
-        cout << halfdata[i].a << "/2 = "
-             << halfdata[i].b << "\n";
+        cout << hoqdata[i].a << "/2 = "
+             << hoqdata[i].b << "\n";
     }
 
     return 0;

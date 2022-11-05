@@ -34,6 +34,7 @@
             T& operator[](std::size_t i, std::size_t j, std::size_t k);
     };
 
-    #include "synchronised_array.cpp" // to ensure compilation of relevant T's in including files
+    // bring in definitions to ensure compilation of relevant T's in including files
+    #include "synchronised_array.cpp" 
 
 #endif

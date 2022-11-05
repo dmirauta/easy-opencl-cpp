@@ -49,6 +49,7 @@
 
     };
 
-    #include "easy_cl.cpp" // to ensure compilation of relevant T's in including files
+    // bring in definitions to ensure compilation of relevant T's in including files
+    #include "easy_cl.cpp"
 
 #endif

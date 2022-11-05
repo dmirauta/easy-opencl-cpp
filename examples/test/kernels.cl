@@ -1,3 +1,4 @@
+//#include "kernelutils.c" //can let opencl bring this in or concatenate in easycl
 
 __kernel void _add(__global AddData_t *data)
 {
@@ -11,15 +12,15 @@ __kernel void _add(__global AddData_t *data)
 
 }
 
-__kernel void _halve(__global HalveData_t *data)
+__kernel void _halve_or_quarter(__global HoQData_t *data)
 {
 
     int i = get_global_id(0);
 
     #ifdef HALVE_IS_QUARTER
-    data[i].b = 0.25 * data[i].a;
+        data[i].b = mult(data[i].a, 0.25);
     #else
-    data[i].b = 0.5 * data[i].a;
+        data[i].b = mult(data[i].a, 0.5);
     #endif
 
 }

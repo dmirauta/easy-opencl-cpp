@@ -6,8 +6,8 @@ typedef struct AddData
     int c;
 } AddData_t;
 
-typedef struct HalveData
+typedef struct HoQData
 {
     int a;
     float b;
-} HalveData_t;
+} HoQData_t;
