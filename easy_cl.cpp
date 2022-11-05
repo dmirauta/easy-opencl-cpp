@@ -3,7 +3,7 @@
 #include <sstream>
 
 // not including since this is imported by
-//#include "quick_cl.hpp"
+//#include "easy_cl.hpp"
 
 // https://stackoverflow.com/a/62772405
 std::string read_string_from_file(const std::string &file_path) {
@@ -101,8 +101,7 @@ std::map<std::string, cl::Kernel> setup_cl_prog(cl::Context &context,
 }
 
 template<typename T>
-void apply_kernel(cl::Context &context,
-                  cl::CommandQueue &queue,
+void apply_kernel(cl::CommandQueue &queue,
                   cl::Kernel &kernel,
                   SynchronisedArray<T> &data,
                   bool blocking)
@@ -158,6 +157,6 @@ void EasyCL::load_kernels(std::vector<std::string> source_files,
 template<typename T>
 void apply_kernel(EasyCL &ecl, std::string kernel_name, SynchronisedArray<T> &data)
 {
-    apply_kernel(ecl.context, ecl.queue, ecl.kernels[kernel_name], data);
+    apply_kernel(ecl.queue, ecl.kernels[kernel_name], data);
 }
 
