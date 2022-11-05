@@ -14,7 +14,7 @@ Files required:
 
 * Any source files used by the kernel.
 
-A program (see `examples/test`) using this wrapper then:
+A program (see `examples/test/main.cpp`) using this wrapper then:
 
 * Includes `src/easy_cl.hpp`
 
