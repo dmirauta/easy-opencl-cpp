@@ -45,7 +45,7 @@ May require pointing to OCL header location e.g.
 
 * GLCL interop?
 
-* unnecesarily copying some data to and from by packing like this, apply_kernel should, on top of normal/simple SynchronisedArray, have options along the lines of:
+* Unnecesarily copying some data to and from by packing like this, apply_kernel should, on top of normal/simple SynchronisedArray, have options along the lines of:
 
     * InputOnlySA (not copied back)
 
@@ -53,4 +53,4 @@ May require pointing to OCL header location e.g.
 
     * A Param struct, to be shared (across all work items)
 
-* also some concern for GPU packing structs differently?
+* Potential concern for different compilers packing structs differently? (causing missmatch in reading and writing between c++ and opencl?)

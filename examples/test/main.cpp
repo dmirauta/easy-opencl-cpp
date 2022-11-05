@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
 
     // Run kernel
     apply_kernel(ecl, "_add", adddata);
+    
     // Preview results
     cout << "\n" << "Adding (viewing last "<<_m_preview<<"x"<<_m_preview<<")\n";
     for(int i=m1-_m_preview; i<m1; i++)
