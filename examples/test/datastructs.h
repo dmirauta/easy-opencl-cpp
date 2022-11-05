@@ -1,13 +1,13 @@
 
 typedef struct AddData
 {
-    int a;
-    int b;
-    int c;
+    int in1;
+    int in2;
+    int out;
 } AddData_t;
 
 typedef struct HoQData
 {
-    int a;
-    float b;
+    int   in;
+    float out;
 } HoQData_t;

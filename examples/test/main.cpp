@@ -35,8 +35,8 @@ int main(int argc, char* argv[]) {
     {
         for (int j=0; j<m2; j++)
         {
-            adddata[i, j].a = i;
-            adddata[i, j].b = j;
+            adddata[i, j].in1 = i;
+            adddata[i, j].in2 = j;
         }
     }
 
@@ -49,9 +49,9 @@ int main(int argc, char* argv[]) {
     {
         for(int j=m2-_m_preview; j<m2; j++)
         {
-            cout << adddata[i, j].a << " + "
-                 << adddata[i, j].b << " = "
-                 << adddata[i, j].c << "\n";
+            cout << adddata[i, j].in1 << " + "
+                 << adddata[i, j].in2 << " = "
+                 << adddata[i, j].out << "\n";
         }
     }
 
@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     SynchronisedArray<HoQData> hoqdata(ecl.context, n);
     for (int i=0; i<n; i++)
     {
-        hoqdata[i].a = i;
+        hoqdata[i].in = i;
     }
 
     // Run kernel
@@ -75,8 +75,8 @@ int main(int argc, char* argv[]) {
     cout << "\n" << "Halving or quartering (depending on build options) (viewing first " << n_preview <<")\n";
     for(int i=0; i<n_preview; i++)
     {
-        cout << hoqdata[i].a << "/2 = "
-             << hoqdata[i].b << "\n";
+        cout << hoqdata[i].in  << " -> "
+             << hoqdata[i].out << "\n";
     }
 
     return 0;
