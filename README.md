@@ -1,6 +1,6 @@
 # easy-opencl-cpp
 
-Naive attempt at easyfied opencl c++ interface, tries to hide some of the boilerplate.
+Naive attempt at an easyfied opencl c++ wrapper, tries to hide some of the boilerplate.
 
 ## Use
 

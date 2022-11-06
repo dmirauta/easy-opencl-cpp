@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     vector<string> source_files{"datastructs.h", "kernelutils.c", "kernels.cl"};
     vector<string> kernel_names{"_add", "_halve_or_quarter"};
-    ecl.load_kernels(source_files, kernel_names, "-D HALVE_IS_QUARTER");
+    ecl.load_kernels(source_files, kernel_names, "-D DO_QUARTER");
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Adding test

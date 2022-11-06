@@ -1,7 +1,7 @@
 
-#ifndef QUICK_CL_
+#ifndef EASY_CL_
 
-    #define QUICK_CL_
+    #define EASY_CL_
 
     #include <map>
 
