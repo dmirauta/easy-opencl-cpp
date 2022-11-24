@@ -17,27 +17,20 @@
 
             T* cpu_buff;
             
-            SynchronisedArray(//cl_mem_flags flags, 
-                                cl::Context &context,
-                                int nx, int ny = 1, int nz = 1)
+            SynchronisedArray(cl::Context &context, cl_mem_flags flags, Dims dimensions)
             {
-                // mem_flags = flags;
+                mem_flags = flags;
 
-                itemsx = nx;
-                itemsy = ny;
-                itemsz = nz;
-                items = itemsx * itemsy * itemsz;
+                dims = dimensions;
+                items = dims.x * dims.y * dims.z;
 
                 buffsize = sizeof(T)*items;
                 cpu_buff = new T[items];
-                gpu_buff = cl::Buffer(context, CL_MEM_READ_WRITE, buffsize);
+                gpu_buff = cl::Buffer(context, flags, buffsize);
             }
 
-            // SynchronisedArray(cl::Context &context, 
-            //                     int nx, int ny = 1, int nz = 1)
-            // {
-            //     SynchronisedArray(CL_MEM_READ_WRITE, context, nx, ny, nz);
-            // }
+            SynchronisedArray(cl::Context &context, Dims dimensions) 
+                : SynchronisedArray(context, CL_MEM_READ_WRITE, dimensions) {}
 
             ~SynchronisedArray()
             {
@@ -46,33 +39,35 @@
 
             void to_gpu(cl::CommandQueue &queue)
             {
-                queue.enqueueWriteBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
+                if (mem_flags!=CL_MEM_READ_ONLY)
+                    queue.enqueueWriteBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
             }
 
             void from_gpu(cl::CommandQueue &queue)
             {
-                queue.enqueueReadBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
+                if (mem_flags!=CL_MEM_WRITE_ONLY)
+                    queue.enqueueReadBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
             }
 
             T& operator[](std::size_t i)
             {
-                assert(i<itemsx);
+                assert(i<dims.x);
                 return cpu_buff[i];
             }
 
             T& operator[](std::size_t i, std::size_t j) // requires -std=c++23
             {
-                assert(i<itemsx);
-                assert(j<itemsy);
-                return cpu_buff[i*itemsy + j];
+                assert(i<dims.x);
+                assert(j<dims.y);
+                return cpu_buff[i*dims.y + j];
             }
 
             T& operator[](std::size_t i, std::size_t j, std::size_t k)
             {
-                assert(i<itemsx);
-                assert(j<itemsy);
-                assert(k<itemsz);
-                return cpu_buff[ (i*itemsy + j)*itemsz + k ];
+                assert(i<dims.x);
+                assert(j<dims.y);
+                assert(k<dims.z);
+                return cpu_buff[ (i*dims.y + j)*dims.z + k ];
             }
 
     };

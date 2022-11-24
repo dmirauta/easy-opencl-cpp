@@ -30,11 +30,14 @@ int main(int argc, char* argv[]) {
     const int _m_preview = 3;
 
     // Setup data
-    SynchronisedArray<AddData> adddata(ecl.context, m1, m2);
+    Dims d(m1, m2);
+    SynchronisedArray<AddData> adddata(ecl.context, d);
+    cout << adddata.dims.x << ", " << adddata.dims.y << ", " << adddata.dims.z <<" : " << adddata.items << "\n"; 
     for (int i=0; i<m1; i++)
     {
         for (int j=0; j<m2; j++)
         {
+            //cout << i << ", " << j << "\n"; 
             adddata[i, j].in1 = i;
             adddata[i, j].in2 = j;
         }
@@ -44,7 +47,6 @@ int main(int argc, char* argv[]) {
     ecl.apply_kernel("_add", adddata);
     
     // Preview results
-    cout << "\n" << "Adding (viewing last "<<_m_preview<<"x"<<_m_preview<<")\n";
     for(int i=m1-_m_preview; i<m1; i++)
     {
         for(int j=m2-_m_preview; j<m2; j++)
@@ -62,7 +64,8 @@ int main(int argc, char* argv[]) {
     const int n_preview = 10;
 
     // Setup data
-    SynchronisedArray<HoQData> hoqdata(ecl.context, n);
+    Dims d2(n);
+    SynchronisedArray<HoQData> hoqdata(ecl.context, d2);
     for (int i=0; i<n; i++)
     {
         hoqdata[i].in = i;

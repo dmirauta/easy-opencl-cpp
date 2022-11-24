@@ -102,13 +102,13 @@ std::map<std::string, cl::Kernel> setup_ocl_prog(cl::Context &context,
 cl::NDRange get_global_dims(AbstractSynchronisedArray &arr)
 {
     cl::NDRange global_dims;
-    if (arr.itemsz>1)
+    if (arr.dims.z>1)
     {
-        global_dims = cl::NDRange(arr.itemsx, arr.itemsy, arr.itemsz);
-    } else if (arr.itemsy>1) {
-        global_dims = cl::NDRange(arr.itemsx, arr.itemsy);
-    } else if (arr.itemsx>1) {
-        global_dims = cl::NDRange(arr.itemsx);
+        global_dims = cl::NDRange(arr.dims.x, arr.dims.y, arr.dims.z);
+    } else if (arr.dims.y>1) {
+        global_dims = cl::NDRange(arr.dims.x, arr.dims.y);
+    } else if (arr.dims.x>1) {
+        global_dims = cl::NDRange(arr.dims.x);
     } else {
         std::cout << "Invalid global dims in apply_kernel? (based on input data)\n";
         exit(1);
