@@ -98,7 +98,7 @@
                 gpu_buff = cl::Buffer(context, flags, buffsize);
             }
 
-            SynchronisedArray(cl::Context &context, Dims dimensions) 
+            SynchronisedArray(cl::Context &context, Dims dimensions={})
                 : SynchronisedArray(context, CL_MEM_READ_WRITE, dimensions) {}
 
             ~SynchronisedArray()
@@ -241,23 +241,6 @@
         return kernels;
     }
 
-    cl::NDRange get_global_dims(AbstractSynchronisedArray &arr)
-    {
-        cl::NDRange global_dims;
-        if (arr.dims.z>1)
-        {
-            global_dims = cl::NDRange(arr.dims.x, arr.dims.y, arr.dims.z);
-        } else if (arr.dims.y>1) {
-            global_dims = cl::NDRange(arr.dims.x, arr.dims.y);
-        } else if (arr.dims.x>1) {
-            global_dims = cl::NDRange(arr.dims.x);
-        } else {
-            std::cout << "Invalid global dims in apply_kernel? (based on input data)\n";
-            exit(1);
-        }
-        return global_dims;
-    }
-
     inline void to_gpu(cl::CommandQueue &queue, cl::Kernel &kernel, int firstargnum) { }
 
     template<typename... ASArrays>
@@ -321,11 +304,24 @@
                               AbstractSynchronisedArray& first_arr,
                               ASArrays&... arrs)
             {
+                cl::NDRange global_dims;
+                if (first_arr.dims.z>1)
+                {
+                    global_dims = cl::NDRange(first_arr.dims.x, first_arr.dims.y, first_arr.dims.z);
+                } else if (first_arr.dims.y>1) {
+                    global_dims = cl::NDRange(first_arr.dims.x, first_arr.dims.y);
+                } else if (first_arr.dims.x>1) {
+                    global_dims = cl::NDRange(first_arr.dims.x);
+                } else {
+                    std::cout << "Invalid global dims in apply_kernel? (based on input data)\n";
+                    exit(1);
+                }
+
                 to_gpu(queue, kernels[kernel_name], 0, first_arr, arrs...);
 
                 queue.enqueueNDRangeKernel(kernels[kernel_name],
                                         cl::NullRange,  // offset
-                                        get_global_dims(first_arr),
+                                        global_dims,
                                         cl::NullRange); // local  dims (warps/workgroups)
 
                 from_gpu(queue, first_arr, arrs...);
