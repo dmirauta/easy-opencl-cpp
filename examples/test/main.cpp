@@ -8,8 +8,6 @@ using namespace std;
 
 int main(int argc, char* argv[]) {
 
-    //cout << "Still working on line " << __LINE__ << "!\n";
-
     bool verbose;
     if (argc > 1 && strcmp(argv[1], "1") == 0)
         verbose = true;
@@ -58,8 +56,8 @@ int main(int argc, char* argv[]) {
 
     // Setup data
     Dims d(m1, m2);
-    SynchronisedArray<MultAddInData> madatain(ecl.context, CL_MEM_WRITE_ONLY, d);
-    SynchronisedArray<MultAddOutData> madataout(ecl.context, CL_MEM_READ_ONLY, d);
+    SynchronisedArray<MultAddInData> madatain(ecl.context, CL_MEM_READ_ONLY, d);
+    SynchronisedArray<MultAddOutData> madataout(ecl.context, CL_MEM_WRITE_ONLY, d);
 
     for (int i=0; i<m1; i++)
     {

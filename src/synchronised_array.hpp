@@ -39,13 +39,13 @@
 
             void to_gpu(cl::CommandQueue &queue)
             {
-                if (mem_flags!=CL_MEM_READ_ONLY)
+                if (mem_flags!=CL_MEM_WRITE_ONLY) // gpu will not need to read it, no need to copy to
                     queue.enqueueWriteBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
             }
 
             void from_gpu(cl::CommandQueue &queue)
             {
-                if (mem_flags!=CL_MEM_WRITE_ONLY)
+                if (mem_flags!=CL_MEM_READ_ONLY) // gpu will not write to it, no need to bring it back
                     queue.enqueueReadBuffer(gpu_buff, CL_TRUE, 0, buffsize, cpu_buff);
             }
 

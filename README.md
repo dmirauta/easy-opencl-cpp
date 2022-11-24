@@ -31,6 +31,8 @@ A program (see `examples/test/main.cpp`) using this wrapper then:
         SynchronisedArray<DataStruct> data(ecl.context, [optional CL mem flags,] dims)
         ```
 
+        It seems that CL mem flags can be ignored by the kernels? But they can be used to signal to the SA whether or not it needs to copy itself to, or back from the GPU
+
     * Write data to any arrays that need to be read from on the GPU (e.g `data[2,3].input_a = 2`, `data[2,3].input_b = 3.7`)
 
     * Applies one of the loaded kernels with at least one SA as input with `ecl.apply_kernel("fancy_addition", data_arr1, ...)`, the size of the first array is used to set the workgroup size
@@ -46,5 +48,7 @@ See `examples/test/makefile`
 * Check for c++23 during compilation (and compile without multidimentional indexing otherwise?)
 
 * GLCL interop?
+
+* Add flag to forego copy back for writable array, for multi pass kernels.
 
 * Need to account for different compilers potentially packing structs differently sometimes? (causing a mismatch in reading and writing between c++ and opencl?)
