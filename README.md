@@ -24,11 +24,16 @@ A program (see `examples/test/main.cpp`) using this wrapper then:
 
 * Then for each loaded kernel it wishes to apply:
 
-    * Creates a `SynchronisedArray<DataStruct> data(ecl.context, X [,Y ,Z])`
+    * Creates one or more `SynchronisedArray` (SA)
 
-    * Initilses this data (e.g `data[2,3].input_a = 2`, `data[2,3].input_b = 3.7`, `data[2,3].output_c = 0`)
+        ```
+        Dims dims(X, [Y, Z]) \\ array dimensions
+        SynchronisedArray<DataStruct> data(ecl.context, [optional CL mem flags,] dims)
+        ```
 
-    * Applies one of the loaded kernels on this object `apply_kernel(ecl, "_add", data)`
+    * Write data to any arrays that need to be read from on the GPU (e.g `data[2,3].input_a = 2`, `data[2,3].input_b = 3.7`)
+
+    * Applies one of the loaded kernels with at least one SA as input with `ecl.apply_kernel("fancy_addition", data_arr1, ...)`, the size of the first array is used to set the workgroup size
 
     * When the kernel is finished, the `SynchronisedArray` will update with any changes made by the kernel, for instance we might now have `data[2,3].output_c = 5.7`
 
@@ -42,12 +47,4 @@ See `examples/test/makefile`
 
 * GLCL interop?
 
-* Unnecesarily copying some data to and from by packing like this, apply_kernel should, on top of normal/simple SynchronisedArray, have options along the lines of:
-
-    * InputOnlySA (not copied back)
-
-    * OutputOnlySA (not copied to, presumably instantiated on device)
-
-    * A Param struct, to be shared (across all work items)
-
-* Potential concern for different compilers packing structs differently? (causing mismatch in reading and writing between c++ and opencl?)
+* Need to account for different compilers potentially packing structs differently sometimes? (causing a mismatch in reading and writing between c++ and opencl?)
