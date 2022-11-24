@@ -8,8 +8,8 @@ __kernel void mult_add(__global MultAddIn_t  *indata,
     int Nj = get_global_size(1);
     int idx = i*Nj + j;
 
-    outdata[idx].add = indata[idx].in1 + indata[idx].in2;
-    outdata[idx].mult = mult(indata[idx].in1, indata[idx].in2);
+    outdata[idx].add  = indata[idx].in1 + indata[idx].in2;
+    outdata[idx].mult = indata[idx].in1 * indata[idx].in2;
 
 }
 

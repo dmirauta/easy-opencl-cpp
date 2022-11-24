@@ -6,6 +6,6 @@ test:
 	${include_path} g++ -lOpenCL -std=c++23 -o ${binary} ${src_path}/easy_cl.cpp main.cpp -g
 
 clean:
-	rm core*
-	rm ${binary}
+	-rm core*
+	-rm ${binary}
 	

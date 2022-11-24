@@ -26,18 +26,25 @@ Defines the interface that easy_cl needs to be aware of (it does not need knowle
 
             Dims(std::initializer_list<int> args)
             {
-                int nx=1, ny=1, nz=1;
 
-                if (args.size()>=1)
-                    nx = args.begin()[0];
+                if (args.size()>=1) {
+                    x = args.begin()[0];
+                } else {
+                    x = 1;
+                }
 
-                if (args.size()>=2)
-                    ny = args.begin()[1];
+                if (args.size()>=2) {
+                    y = args.begin()[1];
+                } else {
+                    y = 1;
+                }
 
-                if (args.size()>=3)
-                    nz = args.begin()[2];
+                if (args.size()>=3) {
+                    z = args.begin()[2];
+                } else {
+                    z = 1;
+                }
 
-                Dims(nx, ny , nz);
             }
 
             void operator=(const Dims& d)

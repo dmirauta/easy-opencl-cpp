@@ -28,8 +28,7 @@ int main(int argc, char* argv[]) {
     const int n_preview = 10;
 
     // Setup data
-    Dims d2(n);
-    SynchronisedArray<HoQData> hoqdata(ecl.context, d2);
+    SynchronisedArray<HoQData> hoqdata(ecl.context, {n});
     for (int i=0; i<n; i++)
     {
         hoqdata[i].in = i;
@@ -39,7 +38,7 @@ int main(int argc, char* argv[]) {
     ecl.apply_kernel("halve_or_quarter", hoqdata);
 
     // Preview results
-    cout << "\n" << "Halving or quartering (depending on build options) (viewing first " << n_preview <<")\n";
+    cout << "\n" << "halve_or_quarter (depending on build options) kernel results (viewing first " << n_preview <<")\n";
     for(int i=0; i<n_preview; i++)
     {
         cout << hoqdata[i].in  << " -> "
@@ -55,9 +54,8 @@ int main(int argc, char* argv[]) {
     const int _m_preview = 3;
 
     // Setup data
-    Dims d(m1, m2);
-    SynchronisedArray<MultAddInData> madatain(ecl.context, CL_MEM_READ_ONLY, d);
-    SynchronisedArray<MultAddOutData> madataout(ecl.context, CL_MEM_WRITE_ONLY, d);
+    SynchronisedArray<MultAddInData>  madatain(ecl.context, CL_MEM_READ_ONLY, {m1, m2});
+    SynchronisedArray<MultAddOutData> madataout(ecl.context, CL_MEM_WRITE_ONLY, {m1, m2});
 
     for (int i=0; i<m1; i++)
     {
@@ -73,7 +71,7 @@ int main(int argc, char* argv[]) {
     ecl.apply_kernel("mult_add", madatain, madataout);
     
     // Preview results
-    cout << "\n" << "Mult and Add kernel results (viewing first " << n_preview <<")\n";
+    cout << "\n" << "mult_add kernel results (viewing last " << _m_preview << "x" << _m_preview <<")\n";
     for(int i=m1-_m_preview; i<m1; i++)
     {
         for(int j=m2-_m_preview; j<m2; j++)
