@@ -4,11 +4,11 @@ Naive attempt at an easyfied opencl c++ wrapper, tries to hide some of the boile
 
 ## Use
 
-Files required:
+The project structure expected is:
 
-* A header defining the structs that need to be streamed to and from gpu (e.g `datastructs.h`), this will be used on both sides.
+* A header defining the structs that need to be streamed to and from gpu (e.g `datastructs.h`), this will be used by both c++ and opencl.
 
-* A cl file defining any kernels (e.g `kernels.cl`), each being expected to loop through an array of a datatype specified in `datastructs.h`.
+* A cl file defining any kernels (e.g `kernels.cl`), acting on types specified in `datastructs.h`.
 
     * To keep the code clean, the operations of a single work item could optionally be defined in one or more separate source files (e.g `kernelutils.c`). These could be C98 functions that can also be compiled and debugged ordinarily (with `gcc` for instance).
 
@@ -16,7 +16,7 @@ Files required:
 
 A program (see `examples/test/main.cpp`) using this wrapper then:
 
-* Includes `easy_cl.hpp`, `synchronised_array.hpp` and the user defined `datastructs.h`
+* Includes this header only helper `easy_cl.hpp` and the user defined `datastructs.h`
 
 * Creates an `EasyCL` object which initialises a device
 
@@ -29,6 +29,12 @@ A program (see `examples/test/main.cpp`) using this wrapper then:
         ```
         Dims dims(X, [Y, Z]) \\ array dimensions
         SynchronisedArray<DataStruct> data(ecl.context, [optional CL mem flags,] dims)
+        ```
+
+        or with dims via an initialiser list
+
+        ```
+        SynchronisedArray<DataStruct> data(ecl.context, [optional CL mem flags,] {X, [Y, Z]})
         ```
 
         It seems that CL mem flags can be ignored by the kernels? But they can be used to signal to the SA whether or not it needs to copy itself to, or back from the GPU

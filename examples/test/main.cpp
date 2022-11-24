@@ -1,8 +1,8 @@
 #include <iostream>
 
-#include "easy_cl.hpp" 
-#include "synchronised_array.hpp" // header only, templated class
-#include "datastructs.h"          // struct definitions used in both c++ and opencl
+#include "easy_cl.hpp"
+
+#include "datastructs.h" // struct definitions used in both c++ and opencl
 
 using namespace std;
 
