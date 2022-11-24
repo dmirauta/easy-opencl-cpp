@@ -16,9 +16,12 @@
             int buffsize;
 
             T* cpu_buff;
-
-            SynchronisedArray(cl::Context &context, int nx, int ny = 1, int nz = 1)
+            
+            SynchronisedArray(//cl_mem_flags flags, 
+                                cl::Context &context,
+                                int nx, int ny = 1, int nz = 1)
             {
+                // mem_flags = flags;
 
                 itemsx = nx;
                 itemsy = ny;
@@ -29,6 +32,12 @@
                 cpu_buff = new T[items];
                 gpu_buff = cl::Buffer(context, CL_MEM_READ_WRITE, buffsize);
             }
+
+            // SynchronisedArray(cl::Context &context, 
+            //                     int nx, int ny = 1, int nz = 1)
+            // {
+            //     SynchronisedArray(CL_MEM_READ_WRITE, context, nx, ny, nz);
+            // }
 
             ~SynchronisedArray()
             {

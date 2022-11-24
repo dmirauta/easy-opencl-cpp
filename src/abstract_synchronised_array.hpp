@@ -19,6 +19,7 @@ Defines the interface that easy_cl needs to be aware of (it does not need knowle
             int items;
 
             cl::Buffer gpu_buff;
+            cl_mem_flags mem_flags;
 
             virtual void to_gpu(cl::CommandQueue &queue) = 0;
 

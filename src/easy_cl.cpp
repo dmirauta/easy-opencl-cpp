@@ -99,38 +99,69 @@ std::map<std::string, cl::Kernel> setup_ocl_prog(cl::Context &context,
     return kernels;
 }
 
-void apply_ocl_kernel(cl::CommandQueue &queue,
-                      cl::Kernel &kernel,
-                      AbstractSynchronisedArray &data,
-                      bool blocking)
+cl::NDRange get_global_dims(AbstractSynchronisedArray &arr)
 {
-
     cl::NDRange global_dims;
-    if (data.itemsz>1)
+    if (arr.itemsz>1)
     {
-        global_dims = cl::NDRange(data.itemsx, data.itemsy, data.itemsz);
-    } else if (data.itemsy>1) {
-        global_dims = cl::NDRange(data.itemsx, data.itemsy);
-    } else if (data.itemsx>1) {
-        global_dims = cl::NDRange(data.itemsx);
+        global_dims = cl::NDRange(arr.itemsx, arr.itemsy, arr.itemsz);
+    } else if (arr.itemsy>1) {
+        global_dims = cl::NDRange(arr.itemsx, arr.itemsy);
+    } else if (arr.itemsx>1) {
+        global_dims = cl::NDRange(arr.itemsx);
     } else {
         std::cout << "Invalid global dims in apply_kernel? (based on input data)\n";
         exit(1);
     }
+    return global_dims;
+}
 
-    data.to_gpu(queue);
+void to_gpu(cl::CommandQueue &queue,
+            cl::Kernel &kernel,
+            int firstargnum)
+{
+}
 
-    kernel.setArg(0, data.gpu_buff);
+template<typename... ASArrays>
+void to_gpu(cl::CommandQueue &queue,
+            cl::Kernel &kernel,
+            int firstargnum,
+            AbstractSynchronisedArray& first_arr,
+            ASArrays&... arrs)
+{
+    first_arr.to_gpu(queue);
+    kernel.setArg(firstargnum, first_arr.gpu_buff);
+    to_gpu(queue, kernel, firstargnum+1, arrs...);
+}
+
+
+void from_gpu(cl::CommandQueue &queue)
+{
+}
+
+template<typename... ASArrays>
+void from_gpu(cl::CommandQueue &queue,
+              AbstractSynchronisedArray& first_arr,
+              ASArrays&... arrs)
+{
+    first_arr.from_gpu(queue);
+    from_gpu(queue, arrs...);
+}
+
+template<typename... ASArrays>
+void apply_ocl_kernel(cl::CommandQueue &queue,
+                      cl::Kernel &kernel,
+                      AbstractSynchronisedArray& first_arr,
+                      ASArrays&... arrs)
+{
+    to_gpu(queue, kernel, 0, first_arr, arrs...);
 
     queue.enqueueNDRangeKernel(kernel,
                                cl::NullRange,  // offset
-                               global_dims,
+                               get_global_dims(first_arr),
                                cl::NullRange); // local  dims (warps/workgroups)
 
-    data.from_gpu(queue);
-
-    if (blocking)
-        queue.finish();
+    from_gpu(queue, first_arr, arrs...);
 
 }
 
@@ -152,7 +183,19 @@ void EasyCL::load_kernels(std::vector<std::string> source_files,
     }
 }
 
-void EasyCL::apply_kernel(std::string kernel_name, AbstractSynchronisedArray &data)
+void EasyCL::apply_kernel(std::string kernel_name, AbstractSynchronisedArray &arr)
 {
-    apply_ocl_kernel(queue, kernels[kernel_name], data, true);
+    apply_ocl_kernel(queue, kernels[kernel_name], arr);
+
+    queue.finish();
+}
+
+template<typename... ASArrays>
+void EasyCL::apply_kernel(std::string kernel_name, 
+                            AbstractSynchronisedArray &first_arr,
+                            ASArrays&... arrs)
+{
+    apply_ocl_kernel(queue, kernels[kernel_name], first_arr, arrs...);
+
+    queue.finish(); // blocking
 }

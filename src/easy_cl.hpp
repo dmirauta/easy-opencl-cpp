@@ -27,7 +27,13 @@
                               std::string build_options);
 
             void apply_kernel(std::string kernel_name, 
-                              AbstractSynchronisedArray &data);
+                              AbstractSynchronisedArray &arr);
+
+            template<typename... ASArrays>
+            void apply_kernel(std::string kernel_name, 
+                              AbstractSynchronisedArray &first_arr,
+                              ASArrays&... arrs);
+
 
     };
 
