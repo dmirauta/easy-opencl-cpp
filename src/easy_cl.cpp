@@ -116,55 +116,6 @@ cl::NDRange get_global_dims(AbstractSynchronisedArray &arr)
     return global_dims;
 }
 
-void to_gpu(cl::CommandQueue &queue,
-            cl::Kernel &kernel,
-            int firstargnum)
-{
-}
-
-template<typename... ASArrays>
-void to_gpu(cl::CommandQueue &queue,
-            cl::Kernel &kernel,
-            int firstargnum,
-            AbstractSynchronisedArray& first_arr,
-            ASArrays&... arrs)
-{
-    first_arr.to_gpu(queue);
-    kernel.setArg(firstargnum, first_arr.gpu_buff);
-    to_gpu(queue, kernel, firstargnum+1, arrs...);
-}
-
-
-void from_gpu(cl::CommandQueue &queue)
-{
-}
-
-template<typename... ASArrays>
-void from_gpu(cl::CommandQueue &queue,
-              AbstractSynchronisedArray& first_arr,
-              ASArrays&... arrs)
-{
-    first_arr.from_gpu(queue);
-    from_gpu(queue, arrs...);
-}
-
-template<typename... ASArrays>
-void apply_ocl_kernel(cl::CommandQueue &queue,
-                      cl::Kernel &kernel,
-                      AbstractSynchronisedArray& first_arr,
-                      ASArrays&... arrs)
-{
-    to_gpu(queue, kernel, 0, first_arr, arrs...);
-
-    queue.enqueueNDRangeKernel(kernel,
-                               cl::NullRange,  // offset
-                               get_global_dims(first_arr),
-                               cl::NullRange); // local  dims (warps/workgroups)
-
-    from_gpu(queue, first_arr, arrs...);
-
-}
-
 EasyCL::EasyCL(bool verbose)
 {
     _verbose = verbose;
@@ -181,21 +132,4 @@ void EasyCL::load_kernels(std::vector<std::string> source_files,
     {
         kernels[pair.first] = pair.second;
     }
-}
-
-void EasyCL::apply_kernel(std::string kernel_name, AbstractSynchronisedArray &arr)
-{
-    apply_ocl_kernel(queue, kernels[kernel_name], arr);
-
-    queue.finish();
-}
-
-template<typename... ASArrays>
-void EasyCL::apply_kernel(std::string kernel_name, 
-                            AbstractSynchronisedArray &first_arr,
-                            ASArrays&... arrs)
-{
-    apply_ocl_kernel(queue, kernels[kernel_name], first_arr, arrs...);
-
-    queue.finish(); // blocking
 }

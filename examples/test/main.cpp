@@ -19,43 +19,9 @@ int main(int argc, char* argv[]) {
     EasyCL ecl(verbose);
 
     vector<string> source_files{"datastructs.h", "kernelutils.c", "kernels.cl"};
-    vector<string> kernel_names{"_add", "_halve_or_quarter"};
+    vector<string> kernel_names{"mult_add", "halve_or_quarter"};
     ecl.load_kernels(source_files, kernel_names, "-D DO_QUARTER");
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    //// Adding test
-
-    const int m1 = 1024;
-    const int m2 = 768;
-    const int _m_preview = 3;
-
-    // Setup data
-    Dims d(m1, m2);
-    SynchronisedArray<AddData> adddata(ecl.context, d);
-    cout << adddata.dims.x << ", " << adddata.dims.y << ", " << adddata.dims.z <<" : " << adddata.items << "\n"; 
-    for (int i=0; i<m1; i++)
-    {
-        for (int j=0; j<m2; j++)
-        {
-            //cout << i << ", " << j << "\n"; 
-            adddata[i, j].in1 = i;
-            adddata[i, j].in2 = j;
-        }
-    }
-
-    // Run kernel
-    ecl.apply_kernel("_add", adddata);
-    
-    // Preview results
-    for(int i=m1-_m_preview; i<m1; i++)
-    {
-        for(int j=m2-_m_preview; j<m2; j++)
-        {
-            cout << adddata[i, j].in1 << " + "
-                 << adddata[i, j].in2 << " = "
-                 << adddata[i, j].out << "\n";
-        }
-    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
     //// Halve or quorter test
@@ -72,7 +38,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Run kernel
-    ecl.apply_kernel("_halve_or_quarter", hoqdata);
+    ecl.apply_kernel("halve_or_quarter", hoqdata);
 
     // Preview results
     cout << "\n" << "Halving or quartering (depending on build options) (viewing first " << n_preview <<")\n";
@@ -81,6 +47,49 @@ int main(int argc, char* argv[]) {
         cout << hoqdata[i].in  << " -> "
              << hoqdata[i].out << "\n";
     }
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    //// Adding test
+
+    const int m1 = 1024;
+    const int m2 = 768;
+    const int _m_preview = 3;
+
+    // Setup data
+    Dims d(m1, m2);
+    SynchronisedArray<MultAddInData> madatain(ecl.context, CL_MEM_WRITE_ONLY, d);
+    SynchronisedArray<MultAddOutData> madataout(ecl.context, CL_MEM_READ_ONLY, d);
+
+    for (int i=0; i<m1; i++)
+    {
+        for (int j=0; j<m2; j++)
+        {
+            //cout << i << ", " << j << "\n"; 
+            madatain[i, j].in1 = i;
+            madatain[i, j].in2 = j;
+        }
+    }
+
+    // Run kernel
+    ecl.apply_kernel("mult_add", madatain, madataout);
+    
+    // Preview results
+    cout << "\n" << "Mult and Add kernel results (viewing first " << n_preview <<")\n";
+    for(int i=m1-_m_preview; i<m1; i++)
+    {
+        for(int j=m2-_m_preview; j<m2; j++)
+        {
+            cout << madatain[i, j].in1 << " + "
+                 << madatain[i, j].in2 << " = "
+                 << madataout[i, j].add << "    ";
+
+            cout << madatain[i, j].in1 << " * "
+                 << madatain[i, j].in2 << " = "
+                 << madataout[i, j].mult << "\n";
+        }
+    }
+
 
     return 0;
 }
