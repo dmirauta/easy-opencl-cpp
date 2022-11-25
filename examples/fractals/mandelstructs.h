@@ -17,17 +17,44 @@ typedef struct Box {
 } Box_t;
 
 typedef struct Pixel {
-   unsigned char r; // equivalent of uint8 in opencl...
+   unsigned char r;
    unsigned char g;
    unsigned char b;
 } Pixel_t;
 
 typedef struct EIParam {
-    // General fract iter params
+// General fract iter params
     int            mandel; // mandel or julia
     Complex_t      c;      // not given when mandel selected
     Box_t          view_rect;
 
-    // escape iter param
+// escape iter param
     int            MAXITER;
 } EIParam_t;
+
+typedef struct MPParam {
+// General fract iter params
+    int            mandel; // mandel or julia
+    Complex_t      c;      // not given when mandel selected
+    Box_t          view_rect;
+
+// min prox param
+    int           MAXITER;
+    int           PROXTYPE;
+} MPParam_t;
+
+typedef struct OTParam {
+// General fract iter params
+    int            mandel; // mandel or julia
+    Complex_t      c;      // not given when mandel selected
+    Box_t          view_rect;
+
+// orbit trap param
+    Box_t      trap;
+    int        MAXITER;
+} OTParam_t;
+
+typedef struct ImDims {
+    int        imH;
+    int        imW;
+} ImDims_t;

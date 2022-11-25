@@ -1,5 +1,16 @@
 #include "mandelstructs.h"
 
+// add macro to detect if gcc or opencl and use corresponding builtins?
+inline FPN _abs(FPN x)
+{
+    return x>0 ? x : -x;
+}
+
+inline FPN _min(FPN a, FPN b)
+{
+    return a<b ? a : b;
+}
+
 Complex_t complex_add(Complex_t a, Complex_t b)
 {
     Complex_t c;
@@ -17,7 +28,7 @@ Complex_t complex_mult(Complex_t a, Complex_t b)
 }
 
 // function which we recurse
-Complex_t f(Complex_t z, Complex_t c)
+inline Complex_t f(Complex_t z, Complex_t c)
 {
     return complex_add(complex_mult(z, z), c);
 }
@@ -29,34 +40,14 @@ int in_circle(Complex_t z, Complex_t z0, FPN r)
     return dre*dre + dim*dim < r*r;
 }
 
-int in_box(Complex_t z, Box_t b)
+inline int in_box(Complex_t z, Box_t b)
 {
     return z.re > b.left && z.re<b.right && z.im>b.bot && z.im<b.top;
 }
 
-int in_bounds(Complex_t z)
+inline int in_bounds(Complex_t z)
 {
     return in_circle(z, (Complex_t){0.0,0.0}, 2);
-}
-
-FPN _abs(FPN x)
-{
-    if(x>0)
-    {
-        return x;
-    } else {
-        return -x;
-    }
-}
-
-FPN _min(FPN a, FPN b)
-{
-    if(a<b)
-    {
-        return a;
-    } else {
-        return b;
-    }
 }
 
 FPN proximity(Complex_t z, int PROXTYPE)
@@ -65,7 +56,7 @@ FPN proximity(Complex_t z, int PROXTYPE)
   FPN res = 1000.0;
   if (PROXTYPE & 1)
   {
-    res = _min(res, z.re*z.re + z.im*z.im);
+    res = _min(res, z.re*z.re + z.im*z.im); // normalise to be more in the same value range as other two?
   }
   if (PROXTYPE & 2)
   {
@@ -97,7 +88,7 @@ FPN _minprox(Complex_t z, Complex_t c, int MAXITER, int PROXTYPE)
 
     int i=0;
     FPN dist = proximity(z, PROXTYPE);
-    while(i<MAXITER)
+    while(i<MAXITER && in_bounds(z))
     {
         z = f(z, c);
         dist = _min(dist, proximity(z, PROXTYPE));
