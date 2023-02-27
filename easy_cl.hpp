@@ -1,3 +1,4 @@
+// Header only lib from https://github.com/dmirauta/easy-opencl-cpp
 
 #ifndef EASY_CL_
 
@@ -9,7 +10,11 @@
     #include <sstream>
     #include <cassert>
 
-    #include <CL/cl.hpp> // Apple import differs, but removed for brevity
+    #ifdef __APPLE__
+        #include <OpenCL/cl.hpp>
+    #else
+        #include <CL/cl.hpp>
+    #endif
 
     ////////////////////////////////////////////////////////////////////////////
     //// Arrays
