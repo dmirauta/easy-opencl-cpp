@@ -1,7 +1,8 @@
 #include <iostream>
 #include <filesystem>
 #include <algorithm>
-#include <ctime>
+#include <chrono>
+using namespace std::chrono;
 
 #define STB_IMAGE_WRITE_STATIC
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -13,30 +14,11 @@
 
 using namespace std;
 
-int main(int argc, char* argv[]) {
+void mandel_escape_iter(EasyCL ecl, int N, int M, unsigned char *pix)
+{
+    cout << "Mandel excape iter:\n  compute ";
+    auto start = high_resolution_clock::now();
 
-    bool verbose;
-    if (argc > 1 && strcmp(argv[1], "1") == 0)
-        verbose = true;
-    else
-        verbose = false;
-
-    EasyCL ecl(verbose);
-
-    vector<string> source_files{"mandel.cl"}; // this time importing its own deps by setting include path
-    vector<string> kernel_names{"escape_iter", "min_prox", "orbit_trap", "map_img", "apply_log_int", "apply_log_fpn"};
-    string ocl_include = "-I ";
-    string path = filesystem::current_path();
-    ecl.load_kernels(source_files, kernel_names, ocl_include+path);
-
-    int N = 2160;
-    int M = 3840;
-    unsigned char * pix = new unsigned char[N*M*3];
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    //// Mandelbrot escape iters image
-
-    // Setup data
     SynchronisedArray<int>     iters(ecl.context, CL_MEM_WRITE_ONLY, {N, M});
     SynchronisedArray<EIParam> param(ecl.context);
 
@@ -47,6 +29,9 @@ int main(int argc, char* argv[]) {
     // Run kernel(s)
     ecl.apply_kernel("escape_iter", iters, param);
     ecl.apply_kernel("apply_log_int", iters);
+
+    auto mid = high_resolution_clock::now();
+    cout << duration_cast<milliseconds>(mid - start) << "\n  image write ";
 
     float q, it;
     float fltmax = *max_element(iters.cpu_buff, iters.cpu_buff+iters.items);
@@ -61,10 +46,15 @@ int main(int argc, char* argv[]) {
 
     stbi_write_png("escape_iter.png", M, N, 3, pix, 3*M); // the time consuming bit!
 
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////
-    //// Mandelbrot min prox image
+    auto end = high_resolution_clock::now();
+    cout << duration_cast<milliseconds>(end - mid) << "\n";
+}
 
-    // Setup data
+void mandel_min_prox(EasyCL ecl, int N, int M, unsigned char *pix)
+{
+    cout << "Mandel min prox:\n  compute ";
+    auto start = high_resolution_clock::now();
+
     SynchronisedArray<double>  prox1(ecl.context, CL_MEM_WRITE_ONLY, {N, M});
     SynchronisedArray<double>  prox2(ecl.context, CL_MEM_WRITE_ONLY, {N, M});
     SynchronisedArray<double>  prox3(ecl.context, CL_MEM_WRITE_ONLY, {N, M});
@@ -87,6 +77,9 @@ int main(int argc, char* argv[]) {
     ecl.apply_kernel("min_prox", prox3, param2);
     // ecl.apply_kernel("apply_log_fpn", prox3);
 
+    auto mid = high_resolution_clock::now();
+    cout << duration_cast<milliseconds>(mid - start) << "\n  image write ";
+
     // double p1max = *max_element(prox1.cpu_buff, prox1.cpu_buff+prox1.items);
     // double p2max = *max_element(prox2.cpu_buff, prox2.cpu_buff+prox1.items);
     // double p3max = *max_element(prox3.cpu_buff, prox3.cpu_buff+prox1.items);
@@ -100,6 +93,35 @@ int main(int argc, char* argv[]) {
     }
 
     stbi_write_png("min_prox.png", M, N, 3, pix, 3*M);
+
+    auto end = high_resolution_clock::now();
+    cout << duration_cast<milliseconds>(end - mid) << "\n";
+}
+
+int main(int argc, char* argv[]) 
+{
+
+    bool verbose;
+    if (argc > 1 && strcmp(argv[1], "1") == 0)
+        verbose = true;
+    else
+        verbose = false;
+
+    EasyCL ecl(verbose);
+
+    vector<string> source_files{"mandel.cl"}; // this time importing its own deps by setting include path
+    vector<string> kernel_names{"escape_iter", "min_prox", "orbit_trap", "map_img", "apply_log_int", "apply_log_fpn"};
+    string ocl_include = "-I ";
+    string path = filesystem::current_path();
+    ecl.load_kernels(source_files, kernel_names, ocl_include+path);
+
+    int N = 2160;
+    int M = 3840;
+    unsigned char * pix = new unsigned char[N*M*3];
+
+    mandel_escape_iter(ecl, N, M, pix);
+
+    mandel_min_prox(ecl, N, M, pix);
     
     delete [] pix;
 
