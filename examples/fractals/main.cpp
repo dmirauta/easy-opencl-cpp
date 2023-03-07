@@ -109,11 +109,10 @@ int main(int argc, char* argv[])
 
     EasyCL ecl(verbose);
 
-    vector<string> source_files{"mandel.cl"}; // this time importing its own deps by setting include path
+    vector<string> source_files{"mandel.cl"}; // this time importing its own deps
     vector<string> kernel_names{"escape_iter", "min_prox", "orbit_trap", "map_img", "apply_log_int", "apply_log_fpn"};
-    string ocl_include = "-I ";
-    string path = filesystem::current_path();
-    ecl.load_kernels(source_files, kernel_names, ocl_include+path);
+    string ocl_include_path = filesystem::current_path(); // include path required for cl file importing own deps
+    ecl.load_kernels(source_files, kernel_names, "-I "+ocl_include_path);
 
     int N = 2160;
     int M = 3840;
